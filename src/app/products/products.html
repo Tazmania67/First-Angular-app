@@ -1,0 +1,77 @@
+<h3>Product voorraad & prijs:</h3>
+
+<button class="add-button" (click)="openAddProductModal()">Toevoegen</button>
+
+<div *ngIf="showAddProduct">
+    <input type="text" [(ngModel)]="newProduct.name" placeholder="Productnaam" />
+    <input type="number" [(ngModel)]="newProduct.quantity" placeholder="Aantal" />
+    <input type="number" step="0.01" [(ngModel)]="newProduct.price" placeholder="Prijs (€)" />
+    <select [(ngModel)]="newProduct.category">
+      <option value="">Selecteer categorie</option>
+      <option value="Drank">Drank 🧃</option>
+      <option value="Brood">Brood 🍞</option>
+      <option value="Kaas">Kaas 🧀</option>
+      <option value="Verzorging">Verzorging 🧴</option>
+      <option value="Conserven">Conserven 🥫</option>
+      <option value="Fruit">Fruit 🍎</option>
+      <option value="Groente">Groente 🥦</option>
+</select>
+
+
+    <button class="add-button" (click)="addProduct()">Add Product</button>
+    <button class="delete-button" (click)="closeAddProductModal()">❌ Annuleren</button>
+</div>
+
+<select [(ngModel)]="selectedCategory">
+  <option value="">📦 Toon alle categorieën</option>
+  <option value="Drank">🧃 Drank</option>
+  <option value="Brood">🍞 Brood</option>
+  <option value="Kaas">🧀 Kaas</option>
+  <option value="Verzorging">🧴 Verzorging</option>
+  <option value="Conserven">🥫 Conserven</option>
+  <option value="Fruit">🍎 Fruit</option>
+  <option value="Groente">🥦 Groente</option>
+</select>
+
+@if (!productItems().length) {
+    <p>Loading...</p>
+}
+
+<p>Aantal producten: {{ products.length }}</p>
+
+@for (product of filteredProducts; track product._id) {
+
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <p style="margin: 0;">
+      {{ getCategoryIcon(product.category) }} <strong>{{ product.name }}</strong> – 
+      {{ product.quantity }} stuks – €{{ product.price }}
+    </p>
+    <div>
+      <button class="edit-button" (click)="openEditProduct(product)">✏️ Bewerken</button>
+      <button class="delete-button" (click)="deleteProduct(product._id)">🗑 Verwijderen</button>
+    </div>
+  </div>
+}
+
+<div *ngIf="editProductId">
+  <h4>Product bijwerken</h4>
+  <input type="text" [(ngModel)]="editProductForm.name" placeholder="Naam" />
+  <input type="number" [(ngModel)]="editProductForm.quantity" placeholder="Aantal" />
+  <input type="number" step="0.01" [(ngModel)]="editProductForm.price" placeholder="Prijs (€)" />
+  <select [(ngModel)]="editProductForm.category">
+  <option value="">Selecteer categorie</option>
+  <option value="Drank">Drank 🧃</option>
+  <option value="Brood">Brood 🍞</option>
+  <option value="Kaas">Kaas 🧀</option>
+  <option value="Verzorging">Verzorging 🧴</option>
+  <option value="Conserven">Conserven 🥫</option>
+  <option value="Fruit">Fruit 🍎</option>
+  <option value="Groente">Groente 🥦</option>
+</select>
+
+  
+  <button class="edit-button" (click)="updateProduct()">✅ Opslaan</button>
+  <button class="delete-button" (click)="editProductId = null">❌ Annuleren</button>
+</div>
+
+

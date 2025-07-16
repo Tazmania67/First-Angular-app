@@ -1,0 +1,35 @@
+button {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+/* Toevoegen (groen) */
+.add-button {
+  background-color: seagreen;
+
+  &:hover {
+    background-color: forestgreen;
+  }
+}
+
+/* Bewerken (geel) */
+.edit-button {
+  background-color: goldenrod;
+
+  &:hover {
+    background-color: darkorange;
+  }
+}
+
+/* Verwijderen (rood) */
+.delete-button {
+  background-color: crimson;
+
+  &:hover {
+    background-color: darkred;
+  }
+}
