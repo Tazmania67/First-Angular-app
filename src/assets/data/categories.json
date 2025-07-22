@@ -1,0 +1,9 @@
+[
+  { "name": "Drank", "icon": "🧃" },
+  { "name": "Brood", "icon": "🍞" },
+  { "name": "Kaas", "icon": "🧀" },
+  { "name": "Verzorging", "icon": "🧴" },
+  { "name": "Conserven", "icon": "🥫" },
+  { "name": "Fruit", "icon": "🍎" },
+  { "name": "Groente", "icon": "🥦" }
+]

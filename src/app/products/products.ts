@@ -5,6 +5,13 @@ import { catchError } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import categoriesData from '../../assets/data/categories.json';
+
+type Category = {
+  name: string;
+  icon: string;
+};
 
 type NewProductForm = {
   name: string;
@@ -22,6 +29,7 @@ type NewProductForm = {
 })
 
 export class Products implements OnInit {
+  categories: Category[] = categoriesData;
   productItems = signal<Product[]>([]);
 
   addProductButton() {
@@ -162,17 +170,8 @@ export class Products implements OnInit {
   }
 
   getCategoryIcon(category: string | undefined): string {
-    if (!category) return '📦'; // standaard icoon bij ontbrekende categorie
-
-    const cat = category.toLowerCase();
-    if (cat.includes('drank')) return '🧃';
-    if (cat.includes('brood')) return '🍞';
-    if (cat.includes('kaas') || cat.includes('zuivel')) return '🧀';
-    if (cat.includes('verzorging') || cat.includes('zeep')) return '🧴';
-    if (cat.includes('conserven')) return '🥫';
-    if (cat.includes('fruit')) return '🍎';
-    if (cat.includes('groente')) return '🥦';
-    return '📦';
+    const match = this.categories.find(c => c.name === category);
+    return match ? match.icon : '📦';
   }
 
   trackById(index: number, product: Product): string {
@@ -183,16 +182,27 @@ export class Products implements OnInit {
     return this.productItems();
   }
 
+  searchQuery = '';
+
   selectedCategory = ''; // standaard: geen filter
 
   get filteredProducts(): Product[] {
     const all = this.productItems();
-    if (!this.selectedCategory) return all;
 
-    // filter op exacte categorie
-    return all.filter(p => p.category === this.selectedCategory);
+    // Eerst filteren op categorie
+    let result = this.selectedCategory
+      ? all.filter(p => p.category === this.selectedCategory)
+      : all;
+
+    // Vervolgens filteren op zoekterm (naam bevat)
+    if (this.searchQuery.trim()) {
+      const query = this.searchQuery.toLowerCase();
+      result = result.filter(p => p.name.toLowerCase().includes(query));
+    }
+
+    return result;
   }
 
-
+  
 }
 
