@@ -5,7 +5,6 @@ import { catchError } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { HttpClient } from '@angular/common/http';
 import categoriesData from '../../assets/data/categories.json';
 
 type Category = {
@@ -19,118 +18,158 @@ type NewProductForm = {
   price: string;
   _id: string;
   category: string;
+  image?: string;
 };
 
 @Component({
   selector: 'app-products',
+  standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './products.html',
   styleUrl: './products.scss'
 })
-
 export class Products implements OnInit {
   categories: Category[] = categoriesData;
   productItems = signal<Product[]>([]);
-
-  addProductButton() {
-    console.log('Button was clicked!');
-    // You can put any logic here
-  }
+  originalProducts = signal<Product[]>([]);
+  sortDirection: 'asc' | 'desc' = 'asc';
+  sortBy: '' | 'name' | 'quantity' | 'price' = '';
+  searchQuery = '';
+  selectedCategory = '';
+  showAddProduct = false;
+  editProductId: string | null = null;
 
   newProduct: NewProductForm = {
-    name: '',
-    quantity: '',
-    price: '',
-    _id: '',
-    category: '',
+    name: '', quantity: '', price: '', _id: '', category: '', image: ''
   };
 
-  showAddProduct = false;
+  editProductForm: NewProductForm = {
+    name: '', quantity: '', price: '', _id: '', category: '', image: ''
+  };
 
-  openAddProductModal() {
+  productService = inject(ProductsService);
+
+  ngOnInit(): void {
+    this.productService.getProductsFromApi()
+      .pipe(catchError((err) => {
+        console.error(err);
+        throw err;
+      }))
+      .subscribe((products: Product[]) => {
+        this.productItems.set(products);
+        this.originalProducts.set(products);
+      });
+  }
+
+  get products(): Product[] {
+    return this.productItems();
+  }
+
+  get filteredProducts(): Product[] {
+    let source = [...this.productItems()];
+
+    if (this.sortBy === 'name') {
+      source.sort((a, b) => this.sortDirection === 'asc'
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name));
+    } else if (this.sortBy === 'price') {
+      source.sort((a, b) => this.sortDirection === 'asc'
+        ? a.price - b.price
+        : b.price - a.price);
+    } else if (this.sortBy === 'quantity') {
+      source.sort((a, b) => this.sortDirection === 'asc'
+        ? a.quantity - b.quantity
+        : b.quantity - a.quantity);
+    }
+
+    let result = this.selectedCategory
+      ? source.filter(p => p.category === this.selectedCategory)
+      : source;
+
+    if (this.searchQuery.trim()) {
+      const query = this.searchQuery.toLowerCase();
+      result = result.filter(p => p.name.toLowerCase().includes(query));
+    }
+
+    return result;
+  }
+
+  toggleSortDirection(): void {
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+  }
+
+  onSortByChange(value: string): void {
+    this.sortBy = value as any;
+    if (value === '') {
+      this.productItems.set([...this.originalProducts()]);
+    }
+  }
+
+  openAddProductModal(): void {
     this.showAddProduct = true;
   }
-  closeAddProductModal() {
+
+  closeAddProductModal(): void {
     this.showAddProduct = false;
   }
 
-  addProduct() {
-    const { name, quantity, price } = this.newProduct;
+  addProduct(): void {
+    const { name, quantity, price, category, image } = this.newProduct;
     const quantityNum = parseFloat(quantity);
     const priceNum = parseFloat(price);
 
     if (name && quantityNum > 0 && priceNum >= 0) {
-    const newEntry = {
-      name: name.trim(),
-      quantity: quantityNum,
-      price: priceNum,
-      category: this.newProduct.category ? this.newProduct.category.trim() : ''
-    };
+      const newEntry: Product = {
+        name: name.trim(),
+        quantity: quantityNum,
+        price: priceNum,
+        category: category.trim(),
+        image: image?.trim() || '',
+        _id: ''
+      };
 
-    this.productService.addProductToApi(newEntry).subscribe({
-      next: (savedProduct: Product) => {
-        this.productItems.update(current => [...current, savedProduct]);
-        this.newProduct = { name: '', quantity: '', price: '', _id: '', category: '' };
-        this.closeAddProductModal();
-      },
-      error: (err: unknown) => {
-        console.error('Error saving product:', err);
-        alert('There was a problem saving your product.');
-      }
-    });
+      this.productService.addProductToApi(newEntry).subscribe({
+        next: (savedProduct: Product) => {
+          this.productItems.update(current => [...current, savedProduct]);
+          this.originalProducts.update(current => [...current, savedProduct]);
+          this.newProduct = { name: '', quantity: '', price: '', _id: '', category: '', image: '' };
+          this.closeAddProductModal();
+        },
+        error: (err) => {
+          console.error('Error saving product:', err);
+          alert('Kon product niet toevoegen.');
+        }
+      });
     } else {
-    alert('Please fill out all fields correctly!');
+      alert('Vul alle velden correct in.');
     }
   }
 
-  deleteProduct(productId: string) {
-    this.productService.deleteProductFromApi(productId).subscribe({
-      next: () => {
-        this.productItems.update(current =>
-          current.filter(product => product._id !== productId)
-        );
-      },
-      error: (err: any) => {
-        console.error('Error deleting product:', err);
-        alert('Kon product niet verwijderen.');
-      }
-    });
-  }
-
-  editProductId: string | null = null;
-
-  editProductForm: NewProductForm = {
-    name: '', 
-    quantity: '', 
-    price: '', 
-    _id: '',
-    category: ''
-  };
-
-  openEditProduct(product: Product) {
+  openEditProduct(product: Product): void {
     this.editProductId = product._id;
     this.editProductForm = {
       name: product.name,
       quantity: product.quantity.toString(),
       price: product.price.toString(),
       _id: product._id,
-      category: product.category
+      category: product.category,
+      image: product.image ?? ''
     };
   }
 
-  productService = inject(ProductsService);
-
-  updateProduct() {
-    const { name, quantity, price } = this.editProductForm;
+  updateProduct(): void {
+    const { name, quantity, price, category, image } = this.editProductForm;
     const quantityNum = parseFloat(quantity);
     const priceNum = parseFloat(price);
 
     if (name && quantityNum > 0 && priceNum >= 0 && this.editProductId) {
-      const updatedEntry = {
+      const updatedEntry: Product = {
         name: name.trim(),
         quantity: quantityNum,
         price: priceNum,
-        category: this.editProductForm.category.trim()
+        category: category.trim(),
+        image: image?.trim() || '',
+        _id: this.editProductId
       };
 
       this.productService.updateProductInApi(this.editProductId, updatedEntry).subscribe({
@@ -138,16 +177,13 @@ export class Products implements OnInit {
           this.productItems.update(current =>
             current.map(p => p._id === updatedProduct._id ? updatedProduct : p)
           );
+          this.originalProducts.update(current =>
+            current.map(p => p._id === updatedProduct._id ? updatedProduct : p)
+          );
           this.editProductId = null;
-          this.editProductForm = { 
-            name: '', 
-            quantity: '', 
-            price: '', 
-            _id: '' ,
-            category: ''
-          };
+          this.editProductForm = { name: '', quantity: '', price: '', _id: '', category: '', image: '' };
         },
-        error: (err: any) => {
+        error: (err) => {
           console.error('Error updating product:', err);
           alert('Kon product niet bijwerken.');
         }
@@ -155,18 +191,17 @@ export class Products implements OnInit {
     }
   }
 
-  ngOnInit(): void {
-    this.productService
-      .getProductsFromApi()
-      .pipe(
-        catchError((err) => {
-          console.log(err);
-          throw err;
-         })
-      )
-      .subscribe((products) => {
-        this.productItems.set(products);
-      });
+  deleteProduct(productId: string): void {
+    this.productService.deleteProductFromApi(productId).subscribe({
+      next: () => {
+        this.productItems.update(current => current.filter(p => p._id !== productId));
+        this.originalProducts.update(current => current.filter(p => p._id !== productId));
+      },
+      error: (err) => {
+        console.error('Error deleting product:', err);
+        alert('Kon product niet verwijderen.');
+      }
+    });
   }
 
   getCategoryIcon(category: string | undefined): string {
@@ -178,31 +213,24 @@ export class Products implements OnInit {
     return product._id;
   }
 
-  get products() {
-    return this.productItems();
-  }
-
-  searchQuery = '';
-
-  selectedCategory = ''; // standaard: geen filter
-
-  get filteredProducts(): Product[] {
-    const all = this.productItems();
-
-    // Eerst filteren op categorie
-    let result = this.selectedCategory
-      ? all.filter(p => p.category === this.selectedCategory)
-      : all;
-
-    // Vervolgens filteren op zoekterm (naam bevat)
-    if (this.searchQuery.trim()) {
-      const query = this.searchQuery.toLowerCase();
-      result = result.filter(p => p.name.toLowerCase().includes(query));
+  exportToCSV(): void {
+    const products = this.filteredProducts;
+    if (!products || products.length === 0) {
+      alert('Geen producten om te exporteren.');
+      return;
     }
 
-    return result;
-  }
+    const headers = Object.keys(products[0]);
+    const rows = products.map(p => headers.map(h => `"${p[h as keyof Product] ?? ''}"`).join(','));
+    const csvContent = [headers.join(','), ...rows].join('\n');
 
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'producten.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
   
 }
-
