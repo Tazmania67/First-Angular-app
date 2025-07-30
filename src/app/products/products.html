@@ -68,6 +68,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <p style="margin: 0;">
+            <img [src]="'assets/images/' + product.image" alt="{{ product.name }}" style="width: 40px; height: 30px; margin-top: 4px;" />
             {{ getCategoryIcon(product.category) }} <strong>{{ product.name }}</strong> – 
             {{ product.quantity }} stuks – €{{ product.price }}
           </p>
@@ -75,10 +76,8 @@
         <div>
           <button class="edit-button" (click)="openEditProduct(product)">✏️ Bewerken</button>
           <button class="delete-button" (click)="deleteProduct(product._id)">🗑 Verwijderen</button>
-          <img [src]="'assets/images/' + product.image" alt="{{ product.name }}" style="width: 40px; height: 30px; margin-top: 4px;" />
         </div>
      </div>
-
 
       <!-- 🔧 Bewerkformulier direct onder het juiste product -->
       <div *ngIf="editProductId === product._id" class="edit-form" style="padding-left: 16px;">
@@ -98,6 +97,14 @@
       </div>
   }
 
+  @if (showConfirmDelete()) {
+  <div class="confirm-modal">
+    <p>Weet je zeker dat je {{ productToDelete()?.name }} wilt verwijderen?</p>
+    <button class="confirm-button" (click)="confirmDelete()">✅ Verwijderen</button>
+    <button class="confirm-button" (click)="cancelDelete()">❌ Annuleren</button>
+  </div>
+}
+  
   <p>Aantal producten: {{ products.length }}, Getoond: {{ filteredProducts.length }}</p>
 
   <div style="margin-top: 24px; display: flex; justify-content: space-between;">

@@ -38,6 +38,8 @@ export class Products implements OnInit {
   selectedCategory = '';
   showAddProduct = false;
   editProductId: string | null = null;
+  showConfirmDelete = signal(false);
+  productToDelete = signal<Product | null>(null);
 
   newProduct: NewProductForm = {
     name: '', quantity: '', price: '', _id: '', category: '', image: ''
@@ -119,13 +121,12 @@ export class Products implements OnInit {
     const priceNum = parseFloat(price);
 
     if (name && quantityNum > 0 && priceNum >= 0) {
-      const newEntry: Product = {
+      const newEntry: Omit<Product, '_id'> = {
         name: name.trim(),
         quantity: quantityNum,
         price: priceNum,
         category: category.trim(),
-        image: image?.trim() || '',
-        _id: ''
+        image: image?.trim() || ''
       };
 
       this.productService.addProductToApi(newEntry).subscribe({
@@ -192,16 +193,42 @@ export class Products implements OnInit {
   }
 
   deleteProduct(productId: string): void {
-    this.productService.deleteProductFromApi(productId).subscribe({
+    const product = this.products.find(p => p._id === productId);
+    if (product) {
+      this.productToDelete.set(product);
+      this.showConfirmDelete.set(true);
+    }
+  }
+
+  confirmDelete(): void {
+    const product = this.productToDelete();
+    if (!product) return;
+
+    this.productService.deleteProductFromApi(product._id).subscribe({
       next: () => {
-        this.productItems.update(current => current.filter(p => p._id !== productId));
-        this.originalProducts.update(current => current.filter(p => p._id !== productId));
+        this.productItems.update(current =>
+          current.filter(p => p._id !== product._id)
+        );
+        this.originalProducts.update(current =>
+          current.filter(p => p._id !== product._id)
+        );
+        this.resetDeleteModal();
       },
       error: (err) => {
         console.error('Error deleting product:', err);
         alert('Kon product niet verwijderen.');
+        this.resetDeleteModal();
       }
     });
+  }
+
+  cancelDelete(): void {
+    this.resetDeleteModal();
+  }
+
+  resetDeleteModal(): void {
+    this.productToDelete.set(null);
+    this.showConfirmDelete.set(false);
   }
 
   getCategoryIcon(category: string | undefined): string {
