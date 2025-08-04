@@ -70,3 +70,26 @@ button {
   margin-top: 0px; margin-bottom: 40px; /* kleine ruimte onder het product */
 }
 
+.image-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  cursor: pointer;
+
+  img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    
+  }
+}
+.image-modal img {
+  border: 6px solid #91a1ad;
+}
+
+

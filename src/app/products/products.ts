@@ -28,6 +28,7 @@ type NewProductForm = {
   templateUrl: './products.html',
   styleUrl: './products.scss'
 })
+
 export class Products implements OnInit {
   categories: Category[] = categoriesData;
   productItems = signal<Product[]>([]);
@@ -40,6 +41,16 @@ export class Products implements OnInit {
   editProductId: string | null = null;
   showConfirmDelete = signal(false);
   productToDelete = signal<Product | null>(null);
+  selectedImage = signal<string | null>(null);
+
+  openImageModal(imagePath: string | undefined): void {
+    if (!imagePath) return;
+    this.selectedImage.set(imagePath);
+  }
+
+  closeImageModal(): void {
+    this.selectedImage.set(null);
+  }
 
   newProduct: NewProductForm = {
     name: '', quantity: '', price: '', _id: '', category: '', image: ''
@@ -53,14 +64,14 @@ export class Products implements OnInit {
 
   ngOnInit(): void {
     this.productService.getProductsFromApi()
-      .pipe(catchError((err) => {
-        console.error(err);
-        throw err;
-      }))
-      .subscribe((products: Product[]) => {
-        this.productItems.set(products);
-        this.originalProducts.set(products);
-      });
+    .pipe(catchError((err) => {
+      console.error(err);
+      throw err;
+    }))
+    .subscribe((products: Product[]) => {
+      this.productItems.set(products);
+      this.originalProducts.set(products);
+    });
   }
 
   get products(): Product[] {
@@ -72,21 +83,21 @@ export class Products implements OnInit {
 
     if (this.sortBy === 'name') {
       source.sort((a, b) => this.sortDirection === 'asc'
-        ? a.name.localeCompare(b.name)
-        : b.name.localeCompare(a.name));
+      ? a.name.localeCompare(b.name)
+      : b.name.localeCompare(a.name));
     } else if (this.sortBy === 'price') {
       source.sort((a, b) => this.sortDirection === 'asc'
-        ? a.price - b.price
-        : b.price - a.price);
+      ? a.price - b.price
+      : b.price - a.price);
     } else if (this.sortBy === 'quantity') {
       source.sort((a, b) => this.sortDirection === 'asc'
-        ? a.quantity - b.quantity
-        : b.quantity - a.quantity);
+      ? a.quantity - b.quantity
+      : b.quantity - a.quantity);
     }
 
     let result = this.selectedCategory
-      ? source.filter(p => p.category === this.selectedCategory)
-      : source;
+    ? source.filter(p => p.category === this.selectedCategory)
+    : source;
 
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase();
